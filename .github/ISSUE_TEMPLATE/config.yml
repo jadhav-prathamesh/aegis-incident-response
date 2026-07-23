@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/jadhav-prathamesh/aegis-incident-response/tree/master/docs
+    about: Check the docs for guides, FAQs, and API reference
+  - name: 💬 Discussions
+    url: https://github.com/jadhav-prathamesh/aegis-incident-response/discussions
+    about: Ask questions, share ideas, or get help from the community
+
