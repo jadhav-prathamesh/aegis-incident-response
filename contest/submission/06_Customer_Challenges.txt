@@ -1,0 +1,61 @@
+Real Problems Our Customers Face (And How We Solve Them)
+==========================================================
+
+Who Needs This?
+---------------
+Large IT operations teams managing 500+ servers and complex systems. Specifically:
+- Head of Site Reliability Engineering — responsible for keeping systems up and running
+- On-call production engineers — the people who get woken up at 3 AM
+
+Problem 1: Too Many Alerts
+--------------------------
+The Problem: Engineers get hundreds of alerts per day. Most are noise. Real emergencies get buried in the noise.
+
+How We Solve It: Our Observer Agent filters and correlates alerts. It only flags what actually matters. The system groups related alerts together so engineers see the big picture, not individual noise.
+
+Problem 2: Finding the Root Cause Takes Forever
+------------------------------------------------
+The Problem: When something breaks, engineers manually check logs, metrics, recent changes, and past incidents to find the cause. This takes 1-4 hours.
+
+How We Solve It: The Planner Agent automatically searches everything:
+- Past similar incidents (vector similarity search)
+- Knowledge base runbooks
+- Incident context (severity, category, affected services)
+All of this happens in seconds, not hours.
+
+Problem 3: Manual Fixes Are Slow and Error-Prone
+-------------------------------------------------
+The Problem: Common fixes (restart, scale up, clear cache) require engineers to manually SSH into servers or run kubectl commands. Each manual step risks human error.
+
+How We Solve It: The Executor Agent automates 15 types of fix actions. Everything is logged, repeatable, and has built-in safety checks. No more "I accidentally ran the command on the wrong server."
+
+Problem 4: Approval Bottlenecks
+-------------------------------
+The Problem: Actions like restarting a production database require manager approval, which causes delays while waiting for someone to respond.
+
+How We Solve It: Our approval workflow handles request/approve/reject lifecycle. 8 types of risky actions always require approval. In development mode, actions auto-approve for faster iteration.
+
+Problem 5: No One Checks If the Fix Actually Worked
+---------------------------------------------------
+The Problem: After applying a fix, teams often skip validation or just do a quick glance. The fix might not have worked, or might have caused a different problem.
+
+How We Solve It: The Validator Agent runs 6+ types of checks automatically:
+- Health endpoint checks
+- Key metrics comparison
+- Synthetic transactions
+- Alert resolution verification
+- Compliance checks
+- Baseline comparison
+
+Problem 6: Knowledge Walks Out the Door
+----------------------------------------
+The Problem: When experienced engineers leave, their incident knowledge leaves with them. The next person has to figure everything out from scratch.
+
+How We Solve It: Every incident is automatically indexed for future search. Every resolution becomes searchable knowledge. Our hybrid search finds relevant past incidents by meaning, not just by keywords.
+
+What We DON'T Solve Yet
+-----------------------
+- Predicting failures before they happen (configured but not built)
+- Multi-cloud operations (AWS, GCP, Azure — just stubs)
+- Integration with ticketing systems like ServiceNow (just stubs)
+- Cost optimization (disabled by default)

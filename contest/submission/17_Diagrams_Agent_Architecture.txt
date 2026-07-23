@@ -1,0 +1,181 @@
+Agent Architecture (LangGraph State Machine)
+===============================================
+
+Overview
+--------
+The agent system is built on a LangGraph state machine pattern where each agent
+inherits from BaseAgent (ABC) and follows a PROCESS -> TOOLS -> EVALUATE lifecycle.
+All 5 implemented agents share the same base architecture with agent-specific logic.
+
+Base Class Hierarchy
+--------------------
+BaseAgent (ABC)                    <- src/agents/base.py
+  |
+  +-- ReactAgent                   <- src/agents/base.py (ReAct pattern)
+       |
+       +-- OrchestratorAgent       <- src/agents/orchestrator.py
+       +-- ObserverAgent           <- src/agents/observer.py
+       +-- PlannerAgent            <- src/agents/planner.py
+       +-- ExecutorAgent           <- src/agents/executor.py
+       +-- ValidatorAgent          <- src/agents/validator.py
+
+Future Agent Types (defined in AgentType enum but not implemented):
+  - RCA_ANALYZER  (Root Cause Analysis)
+  - HEALING_AGENT (Self-healing automation)
+  - TICKET_ROUTER (Intelligent ticket routing)
+  - PRIORITIZER   (Incident priority scoring)
+  - PREDICTOR     (Predictive failure detection)
+
+State Machine Flow
+------------------
+All agents follow this LangGraph state machine:
+
+  START
+    |
+    v
+  PROCESS node (LLM call + decision logic)
+    |
+    v
+  _should_continue(state)?
+    |
+    +-- YES --> TOOLS node (ToolNode with agent-specific tools)
+    |              |
+    |              v
+    |           (back to PROCESS)
+    |
+    +-- NO  --> END
+
+Agent State (BaseAgentState):
+  - task: AgentTask | None         - The task to execute
+  - incident_id: UUID | None       - Associated incident
+  - workflow_id: UUID | None       - Workflow correlation ID
+  - messages: list[BaseMessage]   - LLM message history
+  - intermediate_results: dict     - Results from tools and processing
+  - error: str | None              - Error message if failed
+  - should_continue: bool          - Whether to continue the loop
+  - iterations: int                - Current iteration count
+  - max_iterations: int            - Maximum iterations before forced end
+  - started_at: datetime           - When execution started
+  - completed_at: datetime | None  - When execution completed
+
+Agent-Specific States
+---------------------
+Each agent extends BaseAgentState with its own fields:
+
+  OrchestratorState:
+    - incident: Incident | None
+    - workflow_id: UUID | None
+    - decisions: list[OrchestratorDecision]
+    - completed_agents: list[AgentType]
+    - pending_approvals: list[dict]
+
+  PlannerState:
+    - incident: Incident | None
+    - plan: RemediationPlan | None
+    - knowledge_matches: list[dict]
+    - similar_incidents: list[dict]
+
+  ExecutorState:
+    - incident: Incident | None
+    - plan: dict | None
+    - execution: PlanExecution | None
+    - current_step: dict | None
+    - approval_pending: bool
+    - approval_request_id: UUID | None
+
+  ObserverState:
+    - incident: Incident | None
+    - observation: IncidentObservation | None
+    - monitoring_config: dict
+    - check_interval_seconds: int
+    - last_check: datetime | None
+    - consecutive_degraded: int
+
+  ValidatorState:
+    - incident: Incident | None
+    - execution_id: UUID | None
+    - validation_report: ValidationReport | None
+    - validation_config: dict
+    - required_checks: list[str]
+
+Agent Tools
+-----------
+Each agent has access to specific tools bound to its LLM:
+
+  Orchestrator:
+    - create_incident, update_incident, get_incident, list_incidents
+    - trigger_planner, trigger_executor, trigger_observer, trigger_validator
+    - request_approval, send_notification, escalate_incident
+
+  Planner:
+    - search_knowledge_base: Find relevant runbooks and procedures
+    - find_similar_incidents: Find past incidents with similar patterns
+    - get_resource_topology: Understand infrastructure dependencies
+    - validate_plan: Check plan against policies and best practices
+
+  Executor:
+    - execute_action: Run a specific remediation action
+    - request_approval: Request human approval for risky actions
+    - check_action_status: Check status of running action
+    - initiate_rollback: Rollback a failed action
+    - update_incident_status: Update incident during execution
+    - collect_logs: Gather logs from affected systems
+    - run_shell_command: Execute shell commands
+    - kubernetes_action: Perform Kubernetes operations
+    - cloud_action: Perform cloud provider operations
+    - servicenow_action: Update ServiceNow tickets
+
+  Observer:
+    - check_service_health: Check health of specific services
+    - query_metrics: Query time-series metrics from Prometheus/Datadog
+    - get_active_alerts: Get current alerts for incident resources
+    - check_dependencies: Verify health of dependent services
+    - analyze_logs: Analyze recent logs for anomalies
+    - get_deployment_status: Check recent deployments
+    - correlate_events: Correlate events across systems
+
+  Validator:
+    - check_service_health: Verify service health endpoints
+    - query_metrics: Compare metrics before/after remediation
+    - run_synthetic_test: Execute synthetic transactions
+    - verify_alert_resolution: Confirm alerts have resolved
+    - check_compliance: Verify policy compliance
+    - compare_baselines: Compare current state to baselines
+    - validate_rollback: Verify rollback completed successfully
+
+Communication Between Agents
+---------------------------
+The Orchestrator is the central coordinator. Communication flow:
+
+  1. Incident arrives -> Orchestrator
+  2. Orchestrator -> Planner: "Create remediation plan"
+  3. Planner -> Orchestrator: RemediationPlan
+  4. Orchestrator -> Executor: "Execute plan"
+  5. Executor -> Orchestrator: ExecutionResult
+  6. Orchestrator -> Validator: "Validate fix"
+  7. Validator -> Orchestrator: ValidationReport
+  8. Orchestrator -> Observer: "Monitor for regression"
+  9. Orchestrator closes or escalates incident
+
+  Observer continuously monitors and reports back to Orchestrator.
+  Executor requests approvals from human operators when needed.
+
+Confidence Scoring
+------------------
+Each agent calculates a confidence score for its results:
+  - Error occurred: 0.0
+  - Validated result: 0.95
+  - Single iteration: 0.8
+  - Multiple iterations: max(0.5, 0.9 - (iterations * 0.1))
+
+Source Files
+------------
+- Base agent: src/agents/base.py
+- Orchestrator: src/agents/orchestrator.py
+- Planner: src/agents/planner.py
+- Executor: src/agents/executor.py
+- Observer: src/agents/observer.py
+- Validator: src/agents/validator.py
+- Agent types enum: src/core/models.py (AgentType)
+- Action dispatcher: src/core/action_dispatcher.py
+- Approval system: src/core/approval.py

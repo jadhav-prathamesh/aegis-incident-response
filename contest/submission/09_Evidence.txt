@@ -1,0 +1,63 @@
+Evidence: What We've Built and Tested
+========================================
+
+This document tracks what evidence exists to prove our platform works.
+
+What's Fully Built (Source Code)
+--------------------------------
+All 5 AI agents (Orchestrator, Planner, Executor, Observer, Validator) are fully implemented in src/agents/ with typed LangGraph state machines. Each agent has:
+- Dedicated state class with agent-specific fields
+- Custom system prompts and tool sets
+- Process/tools/evaluate lifecycle with iteration limits
+- Confidence scoring and error handling
+
+API: 23 endpoints across 6 route modules (health, incidents, agents, approvals, monitoring, validation) built with FastAPI.
+
+Core Services (14 modules):
+- Config: 11 nested settings groups with env override
+- Database: PostgreSQL async engine with connection pooling
+- Vector DB: ChromaDB + pgvector dual support
+- Knowledge Base: Hybrid vector + keyword search with 5 seed runbooks
+- Action Dispatcher: 15 action types with individual handlers
+- Approval Workflow: Request/approve/reject lifecycle with auto-approve in dev
+- Monitoring: Health checks, Prometheus queries, Alertmanager, log analysis
+- Validation: 6 check types (health, metrics, synthetic, alerts, compliance, baselines)
+- Incident Store: In-memory with PostgreSQL engine ready
+- Similar Incidents: Embedding-based similarity search with brute-force fallback
+- Embeddings: Provider API with deterministic local fallback
+
+Dashboard: Streamlit with 4 pages (Overview, Incidents, Approvals, Create Incident)
+Deployment: Docker Compose with 7 services, Dockerfile, health checks
+
+Test Results
+------------
+93 passing tests covering:
+- test_agent_orchestrator.py: 17 tests for fallback decisions, state routing, LLM interaction
+- test_agent_pipeline.py: 16 tests for Observer, Executor, Validator, Planner behavior
+- test_action_dispatcher.py: Action handler testing
+- test_api.py: API endpoint testing
+- test_approval.py: Approval workflow testing
+- test_dashboard.py: Dashboard helper testing
+- test_planner_search.py: Knowledge search testing
+- test_similar_incidents.py: Similarity search testing
+
+Project File Inventory
+----------------------
+Source code: 40+ Python files in src/ (agents, api, core, dashboard)
+Tests: 8 test files with 93 passing tests
+Documentation: 20 docs files in docs/, 15 contest source docs in contest/source/
+Contest submission: 21 files in contest/submission/ including 5 architecture diagrams
+Diagrams: 5 architecture diagrams in contest/diagrams/
+Presentation: 12 slides in contest/presentation/
+Config: Docker Compose, Dockerfile, pyproject.toml, prometheus.yml
+
+What's NOT Built (Known Gaps)
+-----------------------------
+- Learning loop (Stage 7 of workflow) — future enhancement
+- Cloud SDK integrations (AWS, GCP, Azure) — stub implementations
+- Kubernetes operator — stub implementations
+- ServiceNow/Jira integration — stub implementations
+- Authentication/authorization — JWT config exists but not wired
+- Persistent database — PostgreSQL engine ready but not connected to incident_store
+- CI/CD pipeline — no GitHub Actions configured
+- Performance benchmarks — no load testing done

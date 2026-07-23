@@ -1,0 +1,66 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# AI session state
+.rio/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Docker
+.docker/
+
+# Kubernetes
+kubeconfig
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/
+
+# Local development
+.local/
+*.local
+
+# Data
+data/
+*.db
+*.sqlite

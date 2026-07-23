@@ -1,0 +1,29 @@
+Q&A: Questions Judges Might Ask
+================================
+
+Q: How is this different from existing incident management tools like PagerDuty or ServiceNow?
+A: Those tools help route incidents to the right people and track them. Our platform actually FIXES the incident automatically. We use AI agents to diagnose the problem, plan a fix, execute it, and verify it worked — without waiting for a human.
+
+Q: What happens if the AI makes a mistake?
+A: The system has multiple safety layers. Risky actions require human approval first. Every step has a rollback procedure. The Validator checks if the fix actually worked. And the Orchestrator reports confidence scores so operators know how certain the AI is about its decisions.
+
+Q: Do you need a specific AI model to run this?
+A: No. The system defaults to NVIDIA's Nemotron model via OpenRouter, but you can switch to OpenAI, Anthropic, Ollama (local), or any OpenAI-compatible provider by changing one config variable.
+
+Q: What if the AI API goes down?
+A: The system has a rule-based fallback engine. When the LLM is unavailable, the Orchestrator uses hardcoded decision logic to continue operating. You get degraded but functional automation.
+
+Q: How many incidents can this handle?
+A: We haven't done load testing yet. The platform uses async Python (FastAPI + asyncio) for concurrency, and can be scaled horizontally by adding more worker processes. Performance benchmarking is on the roadmap.
+
+Q: Is this production-ready?
+A: The code is functional and tested, but it's not production-ready yet. Missing items: authentication, persistent storage, TLS/SSL, CI/CD, backup strategy. It's a strong prototype/demo that needs additional work for production deployment.
+
+Q: Can this integrate with our existing monitoring tools?
+A: It comes with Prometheus and Alertmanager support built in. It also has placeholder integrations for PagerDuty, ServiceNow, Slack, Datadog, AWS, GCP, and Azure that would need real API keys and code wiring.
+
+Q: What about security?
+A: Currently CORS-only. JWT settings exist in config but aren't wired in. Do NOT deploy to production without adding authentication. All actions are logged for audit purposes.
+
+Q: Do I need Kubernetes to run this?
+A: No. It runs anywhere Python runs — your laptop, a VM, or Docker. Kubernetes integration is available as a stub for automated pod management but isn't required.

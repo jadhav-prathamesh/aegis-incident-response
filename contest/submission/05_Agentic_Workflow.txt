@@ -1,0 +1,125 @@
+7-Stage Agentic Workflow
+=========================
+
+The platform implements a 7-stage agentic workflow that mirrors how a human SRE team responds to incidents - but fully automated with AI orchestration.
+
+Stage 1: OBSERVE (Observer Agent)
+----------------------------------
+- Continuous health checks on affected services (HTTP endpoints)
+- Query resource metrics from Prometheus (CPU, memory, disk I/O)
+- Fetch active alerts from Alertmanager for incident resources
+- Analyze service dependencies for cascading failures
+- Scan recent logs for error patterns (ERROR, FATAL, panic, OOMKilled)
+- Check deployment status for recent code changes
+- Correlate events across monitoring systems
+- Output: IncidentObservation with overall_status (stable/degrading/critical)
+
+Stage 2: REASON (Orchestrator Agent)
+-------------------------------------
+- Analyze incident severity, category, affected services, and context
+- LLM-powered decision making with structured JSON output
+- Routes: plan -> execute -> observe -> validate -> escalate -> close
+- Fallback decision engine when LLM is unavailable (rule-based)
+- High severity (SEV1/SEV2) -> immediate planning + parallel observation
+- Medium severity (SEV3) -> standard plan -> execute -> validate
+- Low severity (SEV4/SEV5) -> automated resolution with monitoring
+- Known patterns -> use runbook-based execution
+- Unknown patterns -> full planning + RCA analysis
+- Output: OrchestratorDecision with action, next_agent, confidence
+
+Stage 3: PLAN (Planner Agent)
+------------------------------
+- Search knowledge base for relevant runbooks (vector + keyword hybrid)
+- Find similar past incidents via embedding-based similarity search
+- Get resource topology to understand infrastructure dependencies
+- Create structured RemediationPlan with step-by-step actions
+- Each step includes: action_type, target, parameters, dependencies
+- Risk assessment per step: LOW, MEDIUM, HIGH, CRITICAL
+- Rollback procedures defined for each action
+- Approval requirements flagged for risky operations
+- Validate plan against policies and best practices
+- Output: RemediationPlan with ordered steps and risk scores
+
+Stage 4: DECIDE (Orchestrator Agent)
+-------------------------------------
+- Review plan and route to appropriate executor
+- Escalate to human operators when confidence score below threshold
+- Escalate when plan requires human approval (CRITICAL risk steps)
+- Escalate for unknown incident pattern with no similar history
+- Escalate when automated resolution fails or times out
+- Send notifications to stakeholders at key milestones
+- Track incident lifecycle status transitions
+- Output: Execution routing decision
+
+Stage 5: EXECUTE (Executor Agent)
+----------------------------------
+- Execute each remediation step in order (respecting dependencies)
+- Approval gates: request human approval for HIGH/CRITICAL risk actions
+- Action types supported (15 total)
+- RESTART_SERVICE: kubectl rollout restart, systemctl, Docker
+- SCALE_UP: Increase replica count for K8s deployments
+- SCALE_DOWN: Decrease replica count
+- ROLLBACK_DEPLOYMENT: kubectl rollout undo
+- CLEAR_CACHE: Redis cache invalidation
+- FLUSH_QUEUE: Clear message queues
+- FAILOVER: Route traffic to standby
+- BLOCK_IP: iptables DROP rules
+- ISOLATE_HOST: Network isolation
+- RUN_DIAGNOSTIC: Execute diagnostic commands
+- COLLECT_LOGS: Gather log files
+- CREATE_TICKET: Create ServiceNow ticket
+- NOTIFY_ONCALL: Send Slack/email notification
+- ESCALATE: Escalate to higher severity team
+- CUSTOM_SCRIPT: Execute arbitrary scripts
+- Dry-run mode for safe testing (enabled via chaos engineering flag)
+- Rollback initiated automatically on step failure
+- Update incident status during execution
+- Collect execution logs and evidence for audit trail
+- Output: PlanExecution with step_results and rollback state
+
+Stage 6: VALIDATE (Validator Agent)
+-------------------------------------
+- Run 6 types of validation checks
+- HEALTH: Verify service health endpoints respond with 200
+- METRICS: Compare current metrics to baselines (20% deviation threshold)
+- SYNTHETIC: Execute synthetic transactions end-to-end
+- ALERTS: Verify all related alerts have resolved
+- COMPLIANCE: Check incident handling against SLA policies
+- BASELINES: Compare resource metrics to 24-hour historical baselines
+- Aggregated ValidationReport with pass/fail per check
+- Failed critical checks block incident closure
+- Warning checks noted in recommendations
+- Output: ValidationReport with overall_status (passed/failed/partial)
+
+Stage 7: LEARN (Future Enhancement - NOT IMPLEMENTED)
+------------------------------------------------------
+- Post-incident review automatically generated
+- Update knowledge base with new runbooks from successful remediations
+- Fine-tune confidence scoring based on historical outcomes
+- Update similarity search index with resolution patterns
+- Identify recurring incident patterns for proactive prevention
+- Feedback loop to improve agent decision quality over time
+
+Workflow Execution
+------------------
+- All stages coordinated by Orchestrator via AgentTask messages
+- State persisted in OrchestratorState.decisions list
+- Stages can execute in parallel (e.g., OBSERVE during EXECUTE)
+- Incidents can re-enter earlier stages if conditions change
+- Maximum iterations per stage: 10 (configurable)
+- Timeout per stage: 300 seconds (configurable)
+- Human can override decisions at any point via API or dashboard
+
+Source Implementation
+---------------------
+- Observer: src/agents/observer.py
+- Orchestrator: src/agents/orchestrator.py
+- Planner: src/agents/planner.py
+- Executor: src/agents/executor.py
+- Validator: src/agents/validator.py
+- Action dispatcher: src/core/action_dispatcher.py
+- Knowledge base: src/core/knowledge_base.py
+- Similar incidents: src/core/similar_incidents.py
+- Approval system: src/core/approval.py
+- Validation: src/core/validation.py
+- Monitoring: src/core/monitoring.py

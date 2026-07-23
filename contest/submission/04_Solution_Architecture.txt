@@ -1,0 +1,64 @@
+System Architecture: How Everything Fits Together
+=================================================
+
+Overview
+--------
+The platform has four main layers stacked on top of each other. Each layer talks to the one below it.
+
+Layer 1: API Layer (User-Facing)
+--------------------------------
+- Built with FastAPI (a modern Python web framework)
+- 6 groups of endpoints: Health, Incidents, Approvals, Agents, Monitoring, Validation
+- Total: 23 API endpoints
+- This is how external tools and the dashboard talk to the system
+
+Layer 2: Agent Layer (The AI Brain)
+------------------------------------
+- Built with LangGraph (a framework for building AI agent workflows)
+- 5 agents, each with a specific job:
+  * Orchestrator — receives incidents, makes decisions, coordinates other agents
+  * Planner — analyzes incidents, searches knowledge, creates fix plans
+  * Executor — carries out approved fix actions
+  * Observer — watches system health and metrics during/after fixes
+  * Validator — checks that fixes actually worked
+- Each agent runs as a state machine with typed states
+
+Layer 3: Core Services (The Engine)
+------------------------------------
+- 14 service modules covering:
+  * Configuration management (11 nested config groups)
+  * Database connections (PostgreSQL, Redis)
+  * Vector search (ChromaDB or pgvector)
+  * Knowledge management (search runbooks and past incidents)
+  * Action dispatch (15 types of fix actions)
+  * Approval workflow (human-in-the-loop for risky actions)
+  * Monitoring (health checks, metrics, alerts, logs)
+  * Validation (synthetic tests, compliance, baseline comparison)
+  * Logging (structured logging with auto-fallback)
+
+Layer 4: Infrastructure (Where It Runs)
+----------------------------------------
+- Docker + Docker Compose (7 services)
+- Services: API, Dashboard, PostgreSQL, Redis, ChromaDB, Prometheus, Grafana
+- Can run locally with just Python too
+
+Key Design Decisions (With Reasons)
+-----------------------------------
+1. Dual vector databases — ChromaDB for easy development, pgvector for production. Switch without changing code.
+2. Hybrid search fallback — System works even without a vector database by using built-in knowledge + brute force comparison
+3. In-memory incident store — No database needed for development. PostgreSQL engine ready for production migration.
+4. Enum values as strings everywhere — Avoids serialization issues when talking to AI models and APIs
+5. Feature flags — Toggle capabilities on/off without changing code
+6. Lazy agent initialization — Agents start only when first used, reducing startup time
+
+Security (Current State)
+------------------------
+- Currently: Only CORS (Cross-Origin Resource Sharing) is configured
+- Configured but not wired: JWT authentication, rate limiting, audit logging
+- NOT implemented: TLS/SSL, secrets management, encryption
+
+Deployment Options
+------------------
+1. Local Python: python -m src.main (quickest, no Docker needed)
+2. Docker Compose: docker-compose up -d (full stack, 7 containers)
+3. Single container: docker build -t aegis . && docker run ... (API only)

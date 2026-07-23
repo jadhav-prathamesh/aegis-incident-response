@@ -1,0 +1,140 @@
+Risk Register: What Could Go Wrong
+====================================
+
+Technical Risks
+---------------
+
+R1: LLM API Unavailability
+- Risk: OpenRouter/OpenAI API goes down or rate-limits the platform
+- Likelihood: Medium | Impact: High | Rating: HIGH
+- Mitigation: Fallback decision engine in orchestrator (src/agents/orchestrator.py:_fallback_decision); graceful degradation to rule-based logic
+- Contingency: Queue tasks for retry; notify on-call via logging
+
+R2: LLM Hallucinates Remediation Plan
+- Risk: AI generates incorrect or dangerous remediation steps
+- Likelihood: Low | Impact: High | Rating: MEDIUM
+- Mitigation: Human approval required for high-risk actions (src/core/approval.py); rollback enabled (src/agents/executor.py)
+- Contingency: Manual override via API or dashboard
+
+R3: In-Memory Incident Data Loss
+- Risk: All incidents lost on server restart (no persistence)
+- Likelihood: High | Impact: High | Rating: CRITICAL
+- Mitigation: Database engine ready (src/core/database.py); PostgreSQL adapter implemented
+- Contingency: Wire database sessions to incident_store.py
+
+R4: Docker Compose Port Conflicts
+- Risk: Port 8000/9090/3000 already in use on host
+- Likelihood: Medium | Impact: Medium | Rating: MEDIUM
+- Mitigation: All ports configurable via environment variables (docker-compose.yml)
+- Contingency: Change .env port mappings
+
+R5: No Authentication/Authorization
+- Risk: API and dashboard exposed without access control
+- Likelihood: Medium | Impact: Critical | Rating: CRITICAL
+- Mitigation: Security settings configured (src/core/config.py); CORS middleware active
+- Contingency: Deploy behind reverse proxy (nginx) with VPN or OAuth proxy
+
+R6: Stub Integrations (K8s, Cloud, ServiceNow)
+- Risk: Stub implementations return mock data, not real actions
+- Likelihood: High | Impact: Medium | Rating: HIGH
+- Mitigation: Documented limitation in code comments and evidence file
+- Contingency: Replace stubs with SDK calls in next sprint
+
+R7: Thread Safety with Global State
+- Risk: In-memory stores (incident_store, approval) not guarded by locks
+- Likelihood: Medium | Impact: Medium | Rating: MEDIUM
+- Mitigation: Currently single-threaded FastAPI + async
+- Contingency: Add asyncio.Lock before scaling horizontally
+
+R8: ChromaDB Data Persistence in Containers
+- Risk: Vector embeddings lost on container restart (no volume)
+- Likelihood: Medium | Impact: Low | Rating: LOW
+- Mitigation: Volume mounted in docker-compose.yml for chroma-data
+- Contingency: Re-index from knowledge base source files
+
+R9: Auto-Approval in Development Mode
+- Risk: High-risk actions auto-approved without human review
+- Likelihood: Low (dev only) | Impact: High | Rating: LOW
+- Mitigation: Dev mode flag in approval.py (auto_approve_in_dev param)
+- Contingency: Set AGENT_AUTO_APPROVE=false in production
+
+R10: No LLM Health Check
+- Risk: Silent degradation if LLM goes down mid-workflow
+- Likelihood: Medium | Impact: Medium | Rating: MEDIUM
+- Mitigation: Add /health endpoint check for LLM connectivity (planned)
+
+Project Risks
+-------------
+
+R11: Incomplete Documentation
+- Risk: Users cannot understand or operate the platform
+- Likelihood: Low | Impact: Medium | Rating: LOW
+- Mitigation: 20 docs files, 15 contest source docs, 12 slides completed
+- Contingency: Automated regeneration prompts available
+
+R12: Scope Creep in Roadmap
+- Risk: Too many features delay core delivery
+- Likelihood: Medium | Impact: Medium | Rating: MEDIUM
+- Mitigation: Priority matrix in PROJECT_PLAN.md and Future_Roadmap.md
+- Contingency: Defer non-critical features to next major release
+
+R13: Contest Submission Deadline
+- Risk: Missing submission cutoff date
+- Likelihood: Medium | Impact: High | Rating: HIGH
+- Mitigation: All core deliverables complete; documentation 100% coverage
+- Contingency: Prioritize submission packaging over enhancements
+
+R14: Missing Learning Loop
+- Risk: No mechanism to learn from past incidents
+- Likelihood: Low (for MVP) | Impact: Medium | Rating: MEDIUM
+- Mitigation: Similar incident retrieval exists (src/core/similar_incidents.py)
+- Contingency: Implement feedback loop in future roadmap phase
+
+Security Risks
+--------------
+
+R15: API Key in Environment Variables
+- Risk: API keys exposed via process listing or env dumps
+- Likelihood: Medium | Impact: High | Rating: HIGH
+- Mitigation: .env excluded from Git; production use secrets manager
+- Contingency: Rotate keys immediately if exposed
+
+R16: Prometheus/Grafana Metrics Exposed
+- Risk: Internal metrics and alerting data visible externally
+- Likelihood: Medium | Impact: Medium | Rating: MEDIUM
+- Mitigation: Internal network only in docker-compose.yml
+- Contingency: Add authentication to Grafana
+
+R17: No Input Validation on Dynamic Actions
+- Risk: Malformed parameters passed to action handlers
+- Likelihood: Low | Impact: Medium | Rating: LOW
+- Mitigation: Action types are typed enums; step parameters validated by Pydantic
+- Contingency: Add Pydantic validation for all action inputs
+
+Dependency Risks
+----------------
+
+R18: ChromaDB Python Client Version Mismatch
+- Risk: Breaking changes in chromadb client library
+- Likelihood: Low | Impact: Medium | Rating: LOW
+- Mitigation: Pinned version in docker-compose.yml; pgvector fallback available
+- Contingency: Use pgvector adapter instead
+
+R19: pgvector Extension Not Available
+- Risk: PostgreSQL without vector extension cannot be used
+- Likelihood: Low | Impact: Low | Rating: LOW
+- Mitigation: Dual vector DB support (ChromaDB as default)
+- Contingency: Switch to ChromaDB provider
+
+R20: structlog Version Breaking Changes
+- Risk: Logging framework upgrade breaks structured logging
+- Likelihood: Low | Impact: Low | Rating: LOW
+- Mitigation: Pinned in pyproject.toml; _CompatLogger fallback in src/core/logging.py
+- Contingency: Use stdlib logging only
+
+Risk Summary
+------------
+- CRITICAL: R3 (data loss), R5 (no auth)
+- HIGH: R1 (LLM down), R6 (stubs), R13 (deadline), R15 (key leakage)
+- MEDIUM: R2 (hallucination), R4 (ports), R7 (threads), R10 (health), R12 (scope), R14 (learning)
+- LOW: R8 (Chroma), R9 (auto-approve), R11 (docs), R17 (validation), R18 (chroma version), R19 (pgvector), R20 (structlog)

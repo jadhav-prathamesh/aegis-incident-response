@@ -1,0 +1,86 @@
+Demo Script
+============
+
+Setup: API at localhost:8000, Dashboard at localhost:8501
+Prerequisites: Python 3.12+, pip install -e ".[dev]", copy .env.example to .env
+
+Segment 1: Dashboard Overview (2 minutes)
+------------------------------------------
+1. Open http://localhost:8501 in browser
+2. Show the blank Overview page with 0 incidents
+3. Point out sidebar navigation (Overview, Incidents, Approvals, Create Incident)
+4. Note the empty state messaging
+
+Segment 2: Create an Incident (2 minutes)
+------------------------------------------
+1. Navigate to "Create Incident" in sidebar
+2. Fill in: Title = "API Latency Spike - Production"
+3. Fill in: Description = "P95 latency on /api/orders endpoint increased from 200ms to 2.5s"
+4. Select: Severity = SEV2 (High), Category = PERFORMANCE
+5. Source = "prometheus", Affected Services = "api-gateway, orders-service"
+6. Click "Create Incident"
+7. Show success message with incident ID
+
+Segment 3: Verify Incident Creation (1 minute)
+-----------------------------------------------
+1. Navigate to "Incidents" tab
+2. Show the newly created incident in the list
+3. Click to expand and show details (title, severity, status, description)
+4. Note the severity color coding (orange for SEV2)
+
+Segment 4: API Demo via curl (3 minutes)
+-----------------------------------------
+1. Open terminal and run:
+   curl http://localhost:8000/health
+   - Show response: {"status": "healthy", "version": "1.0.0"}
+
+2. curl http://localhost:8000/ready
+   - Show response: {"status": "ready"}
+
+3. curl http://localhost:8000/api/v1/incidents
+   - Show list with created incident
+
+4. curl -X POST http://localhost:8000/api/v1/agents/execute \
+     -H "Content-Type: application/json" \
+     -d '{"agent_type": "OBSERVER", "task_type": "observe", "input_data": {"monitoring_config": {"interval_seconds": 60}}}'
+   - Show agent execution result
+
+Segment 5: Explain Behind-the-Scenes Workflow (2 minutes)
+----------------------------------------------------------
+1. Walk through the 7-stage workflow diagram
+2. Explain how Orchestrator receives the incident and makes an LLM decision
+3. Show how Planner searches knowledge base for similar incidents
+4. Explain Executor runs fix actions with approval gates
+5. Describe Observer monitoring during execution
+6. Show Validator checking the fix worked
+
+Segment 6: Approvals Demo (2 minutes)
+--------------------------------------
+1. Navigate to "Approvals" page in dashboard
+2. Show pending approvals (if any)
+3. Click "Approve" on a request
+4. Show the approval status update
+5. Explain the request/approve/reject lifecycle
+
+Segment 7: Test Suite (2 minutes)
+-----------------------------------
+1. Open terminal
+2. Run: pytest tests/ -v --tb=short
+3. Show 93 passing tests
+4. Highlight key test categories:
+   - Orchestrator fallback decisions
+   - Executor step execution and rollback
+   - Observer health status determination
+   - Validator validation checks
+   - API endpoint testing
+
+Total Demo Time: ~14 minutes
+
+Alternative: Quick Demo (5 minutes)
+-----------------------------------
+1. Start API and Dashboard
+2. Create an incident
+3. View it in the dashboard
+4. curl the health endpoint
+5. Run tests
+6. Show knowledge base and agent architecture docs

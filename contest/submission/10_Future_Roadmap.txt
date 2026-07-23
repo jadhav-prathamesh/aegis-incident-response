@@ -1,0 +1,72 @@
+Future Roadmap: What's Coming Next
+====================================
+
+This is our prioritized plan for future development, organized by timeline.
+
+Immediate (Next Sprint)
+-----------------------
+1. Authentication Middleware
+   - JWT settings already exist in config
+   - Need to wire them into FastAPI middleware
+   - Users, logins, permissions for accessing the API
+
+2. Persistent Incident Store
+   - Currently stores incidents in memory (lost on restart)
+   - PostgreSQL engine ready and tested
+   - Need to connect and migrate from in-memory to database
+
+3. CI/CD Pipeline
+   - GitHub Actions for automated testing
+   - Docker image build and push
+   - Automated deployment
+
+Short-Term (2 Sprints)
+----------------------
+4. Cloud SDK Integration
+   - Real AWS, GCP, and Azure API calls (not stubs)
+   - Support for cloud-specific actions (restart EC2, scale ASG, etc.)
+
+5. Kubernetes Operator
+   - Real K8s API calls (not kubectl command stubs)
+   - Support for pod management, scaling, configuration
+
+6. Ticketing System Integration
+   - Real ServiceNow or Jira API calls (not stubs)
+   - Automatic ticket creation and updates
+
+Medium-Term (Quarter)
+---------------------
+7. Learning Loop (Top Priority Gap)
+   - System learns from past incidents
+   - Updates knowledge base with successful patterns
+   - Adjusts confidence scores based on outcomes
+   - Identifies recurring incident patterns
+
+8. Predictive Failure Detection
+   - Predict problems before they happen
+   - Uses historical data and metric patterns
+   - Preventative actions before incidents occur
+
+9. Performance Benchmarking
+   - Load testing
+   - Latency measurement
+   - Scalability testing
+
+Long-Term
+---------
+10. ML Pipeline
+    - Fine-tune models on incident data
+    - Custom embeddings for IT operations
+    - Specialized models for different incident types
+
+11. Chaos Engineering
+    - Intentionally cause failures to test the system
+    - Verify the platform handles unexpected scenarios
+
+12. Multi-Tenancy
+    - Support multiple customers/teams
+    - Isolated data and configurations
+
+13. Compliance Certifications
+    - SOC 2, ISO 27001
+    - Industry-specific compliance

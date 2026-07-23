@@ -1,0 +1,103 @@
+7-Stage Workflow Diagram
+=========================
+
+The incident response workflow follows a linear progression through 7 stages,
+with the Observer operating in parallel during execution.
+
+Workflow State Machine
+----------------------
+
+  START (Incident Created)
+    |
+    v
+  +------------+
+  | STAGE 1:   |  OBSERVE: Health checks, metrics, alerts, logs, dependencies
+  | OBSERVE    |  Agent: ObserverAgent
+  +------------+  Tools: check_service_health, query_metrics, get_active_alerts,
+    |               analyze_logs, check_dependencies, get_deployment_status
+    v
+  +------------+
+  | STAGE 2:   |  REASON: LLM analyzes incident, decides next action
+  | REASON     |  Agent: OrchestratorAgent
+  +------------+  Decision: plan | execute | observe | validate | escalate | close
+    |               Fallback: Rule-based when LLM unavailable
+    v
+  +------------+
+  | STAGE 3:   |  PLAN: Search KB + similar incidents + topology + create plan
+  | PLAN       |  Agent: PlannerAgent
+  +------------+  Output: RemediationPlan with ordered steps, risk, rollback
+    |
+    v
+  +------------+
+  | STAGE 4:   |  DECIDE: Review plan, route to executor or escalate
+  | DECIDE     |  Agent: OrchestratorAgent
+  +------------+  Escalation triggers: low confidence, human approval needed,
+    |               unknown pattern, execution failure
+    v
+  +------------+
+  | STAGE 5:   |  EXECUTE: 15 action types with approval gates and rollback
+  | EXECUTE    |  Agent: ExecutorAgent    (Observer runs in parallel here)
+  +------------+  Actions: restart, scale, rollback, clear cache, block IP,
+    |               failover, diagnostics, logs, tickets, notifications, scripts
+    v
+  +------------+
+  | STAGE 6:   |  VALIDATE: 6 check types (health, metrics, synthetic,
+  | VALIDATE   |  alerts, compliance, baselines)
+  +------------+  Agent: ValidatorAgent
+    |               Output: ValidationReport (passed/failed/partial)
+    v
+  +------------+
+  | STAGE 7:   |  LEARN: Post-incident review, KB updates, model improvement
+  | LEARN      |  Status: NOT IMPLEMENTED (future enhancement)
+  +------------+
+    |
+    v
+  END (Incident Closed or Escalated)
+
+Parallel Execution Paths
+------------------------
+
+  Path A: Standard (SEV3)
+    OBSERVE -> REASON -> PLAN -> DECIDE -> EXECUTE -> VALIDATE -> CLOSE
+    (Observer monitors during EXECUTE in parallel)
+
+  Path B: High Severity (SEV1/SEV2)
+    OBSERVE -> REASON -> PLAN (parallel OBSERVE) -> DECIDE
+    -> EXECUTE (parallel OBSERVE) -> VALIDATE (parallel OBSERVE) -> CLOSE
+
+  Path C: Low Severity (SEV4/SEV5)
+    OBSERVE -> REASON -> EXECUTE (automated) -> VALIDATE -> CLOSE
+    (Skips full PLANNING for known patterns)
+
+  Path D: Escalation
+    Any stage -> DECIDE (escalate) -> ESCALATE TO HUMAN
+    Triggers: LLM failure, validation failure, rollback failure,
+    unknown pattern, human approval rejected
+
+  Path E: Rollback
+    EXECUTE (step failure) -> ROLLBACK (initiate_rollback)
+    -> Reroute to PLAN for new approach -> RE-EXECUTE
+
+State Transitions
+-----------------
+  Input: AgentTask received via state.intermediate_results
+  Processing: Each agent runs its LangGraph state machine
+  Output: Results stored back in state.intermediate_results
+  Decision: _should_continue() evaluates if more iterations needed
+  Completion: should_continue=False signals end of agent workflow
+
+Workflow Configuration
+----------------------
+  Max iterations per stage: 10 (configurable via state.max_iterations)
+  Timeout per stage: 300 seconds (default, configurable)
+  Retry attempts: 3 (configurable via AgentConfig.max_retries)
+  Retry delay: 5 seconds (configurable via AgentConfig.retry_delay_seconds)
+
+Source Code Reference
+---------------------
+  Agent base: src/agents/base.py (StateGraph definition)
+  Orchestrator: src/agents/orchestrator.py (workflow routing)
+  Observer: src/agents/observer.py (monitoring)
+  Planner: src/agents/planner.py (planning)
+  Executor: src/agents/executor.py (execution)
+  Validator: src/agents/validator.py (validation)

@@ -1,0 +1,178 @@
+Agent Interaction Sequence
+===========================
+
+This document details the runtime communication flow between agents
+during incident processing. The Orchestrator acts as the central
+message bus, delegating tasks and collecting results.
+
+Primary Interaction Flow
+------------------------
+
+  Step 1: Incident Reception
+  --------------------------
+  External Source (Prometheus alert, API, Dashboard)
+    |
+    v
+  Orchestrator Agent
+    - Creates Incident domain object
+    - Saves to incident_store (in-memory)
+    - Indexes for similarity search (vector DB)
+    - Analyzes severity, category, context
+    - Output: AgentTask to next agent
+
+  Step 2: Observation Phase
+  -------------------------
+  Orchestrator -> ObserverAgent
+    |
+    v
+  Observer Agent
+    - check_service_health(service_name): HTTP GET /health
+    - query_metrics(resource_id): Prometheus queries
+    - get_active_alerts(resource_ids): Alertmanager API
+    - check_dependencies(resource_id): Service topology
+    - analyze_logs(resource_ids): Pattern-based log scan
+    - get_deployment_status(service_name): kubectl events
+    - correlate_events(resource_ids): Cross-system correlation
+    |
+    v
+  Observer -> Orchestrator
+    Returns IncidentObservation with:
+    - overall_status (stable/degrading/critical)
+    - list of ObservationResult checks
+    - active alerts summary
+    - metrics_summary
+    - recommendations
+
+  Step 3: Planning Phase
+  ----------------------
+  Orchestrator -> PlannerAgent
+    |
+    v
+  Planner Agent
+    - search_knowledge_base(query, category): Vector + fallback KB
+    - find_similar_incidents(incident): Embedding similarity search
+    - get_resource_topology(resource_id): Infrastructure mapping
+    - validate_plan(plan): Policy validation
+    |
+    v
+  Planner -> Orchestrator
+    Returns RemediationPlan with:
+    - Ordered list of RemediationStep
+    - Risk assessment per step
+    - Rollback procedures
+    - Approval requirements
+    - Confidence score
+
+  Step 4: Execution Phase
+  -----------------------
+  Orchestrator -> ExecutorAgent
+    |
+    v
+  Executor Agent
+    For each step in RemediationPlan:
+      1. Check if step requires approval
+      2. If yes: request_approval(step) -> waits for human
+      3. execute_action(action_type, target, params)
+      4. check_action_status(action_id): Monitor progress
+      5. collect_logs(resource_ids): Gather evidence
+      6. If failure: initiate_rollback(action_id, rollback)
+      7. Update incident status via update_incident_status()
+    |
+    v
+  Executor -> Orchestrator
+    Returns PlanExecution with:
+    - step_results (one per RemediationStep)
+    - overall_success (bool)
+    - rollback_initiated (bool)
+    - execution logs
+
+  Step 5: Validation Phase
+  ------------------------
+  Orchestrator -> ValidatorAgent
+    |
+    v
+  Validator Agent
+    - check_service_health(service): HTTP health check
+    - query_metrics(resource, compare_to_baseline=True)
+    - run_synthetic_test(service, test_type="smoke")
+    - verify_alert_resolution(incident_id, resource_ids)
+    - check_compliance(incident_id, execution_id)
+    - compare_baselines(resource_ids)
+    - validate_rollback(execution_id): If rollback occurred
+    |
+    v
+  Validator -> Orchestrator
+    Returns ValidationReport with:
+    - overall_status (passed/failed/partial)
+    - passed_checks / failed_checks counts
+    - List of ValidationResult
+    - recommendations for failed checks
+
+  Step 6: Observation (Post-Validation)
+  -------------------------------------
+  Orchestrator -> ObserverAgent (if incident still open)
+    |
+    v
+  Observer Agent
+    - Re-check health, metrics, alerts for all resources
+    - Compare to pre-execution baseline
+    - Detect regression or new issues
+    |
+    v
+  Observer -> Orchestrator
+    Returns updated IncidentObservation
+
+  Step 7: Decision
+  ----------------
+  Orchestrator Agent makes final decision:
+    - CLOSE: All checks passed, validation OK, no regression
+    - ESCALATE: Validation failed, regression detected, or unknown
+    - RE-OBSERVE: Monitor longer for late-onset issues
+    - RE-PLAN: Previous plan failed, needs new approach
+
+Secondary Interactions
+----------------------
+
+  Approval Flow (Executor <-> Human):
+    Executor -> creates ApprovalRequest (src/core/approval.py)
+    Human -> approve/reject via API (/api/v1/approvals/{id})
+    Executor -> checks approval status before proceeding
+
+  Incident Update Flow (Executor -> System):
+    Executor -> update_incident_status() -> incident_store.py
+    - Updates status: OPEN -> INVESTIGATING -> RESOLVING -> RESOLVED
+    - Updates timestamps: acknowledged_at, resolved_at
+
+  Notification Flow (Orchestrator -> External):
+    Orchestrator -> send_notification()
+    - Slack notification via webhook
+    - Email via SMTP
+    - PagerDuty for critical incidents
+
+Data Flow Summary
+-----------------
+  Incident Data Flow:
+    Create (API/Alert) -> Store (memory) -> Index (vector DB)
+    -> Search (similarity) -> Analyze (Orchestrator)
+    -> Plan (Planner) -> Execute (Executor)
+    -> Validate (Validator) -> Observe (Observer)
+    -> Close/Escalate (Orchestrator)
+
+  Message Format:
+    Orchestrator sends AgentTask to each agent via
+    state.intermediate_results dictionary
+    Each agent returns results via state updates
+    No external message bus required (single process)
+
+  State Persistence:
+    All agent decisions stored in OrchestratorState.decisions
+    Incident state in incident_store (dict[UUID, Incident])
+    Approval state in approval._pending_approvals (dict[UUID, ApprovalRequest])
+
+Source References
+-----------------
+  Agent factory: src/agents/base.py (get_agent function)
+  Orchestrator routing: src/agents/orchestrator.py
+  Task creation: src/core/models.py (AgentTask, AgentResult)
+  Approval workflow: src/core/approval.py
+  Incident store: src/core/incident_store.py

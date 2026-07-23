@@ -1,0 +1,42 @@
+How Our AI Solution Works
+=========================
+
+Multi-Agent System Design
+-------------------------
+We use five specialized AI agents that work together as a team. Each agent uses a Large Language Model (LLM) to make smart decisions, following the ReAct (Reason + Act) pattern:
+1. Think about the situation
+2. Decide what to do
+3. Use tools to gather info or take action
+4. Review the results
+5. Repeat until the job is done
+
+LLM Integration
+---------------
+Default: NVIDIA Nemotron via OpenRouter
+Configurable: OpenAI, Anthropic, Ollama, or any OpenAI-compatible provider
+
+Smart Decision Making
+--------------------
+The Orchestrator uses the LLM to analyze incidents and decide next actions. Falls back to hardcoded rules when the AI is unavailable:
+- SEV1/SEV2 + new → Plan immediately
+- SEV3/4/5 + new → Plan (less urgent)
+- Investigating + no plan → Need plan
+- Investigating + plan ready → Execute
+- Resolving + done → Validate
+- Validated → Close
+
+AI Safety Features
+------------------
+- Approval gates for risky actions
+- Dry-run mode to test before executing
+- Rollback procedures for each step
+- Confidence scores for decisions
+- Fallback to rule-based logic
+- Full audit logging
+
+Limitations
+-----------
+- No learning from past outcomes
+- No multi-model fallback
+- No conversation memory
+- No A/B testing

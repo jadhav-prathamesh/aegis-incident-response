@@ -1,0 +1,54 @@
+The Problem: Why We Built This
+==============================
+
+Keeping computer systems running smoothly is really hard. Here's why:
+
+1. Fixing Problems Takes Way Too Long
+-------------------------------------
+When something breaks, engineers have to figure out what's wrong first. This takes:
+- 15-30 minutes just to figure out how serious it is
+- 1-4 hours to find the root cause for tricky problems
+- 30-60 minutes for each fix action
+- 15-30 minutes to check if the fix worked
+- Total: 4-8 hours for a single incident (industry average)
+
+2. Engineers Are Burned Out
+---------------------------
+- Someone has to be on-call 24/7 to handle problems
+- About 60% of alerts are simple issues that follow known procedures
+- Engineers spend 30% of their on-call time doing things a computer could do
+- Too many alerts means real emergencies get missed
+
+3. Knowledge Gets Lost
+----------------------
+- When experienced engineers leave, their knowledge leaves with them
+- Runbooks (fix instructions) are rarely updated
+- Different engineers fix the same problem in different ways
+- No way to learn from past incidents
+
+4. Fixes Are Inconsistent
+-------------------------
+- Different engineers diagnose the same symptoms differently
+- Quality of fixes varies from person to person
+- Validation steps are often skipped
+- Documentation is incomplete
+
+5. Problems Grow With Scale
+---------------------------
+- As companies grow, the number of incidents grows too
+- Hiring more people helps with volume but not with complexity
+- Senior engineers spend more time fighting fires than improving systems
+
+What A Good Solution Should Do
+------------------------------
+- Automatically bring in incidents from monitoring tools
+- Understand what's affected and how bad it is
+- Search past incidents and runbooks for similar situations
+- Create a clear, step-by-step fix plan
+- Execute fixes safely with human approval for risky actions
+- Monitor during and after the fix
+- Validate that everything is working again
+- Escalate to humans when needed
+- Learn from outcomes to get better over time
+
+Our platform does ALL of these except learning from outcomes (that's next on the roadmap).

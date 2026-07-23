@@ -1,0 +1,73 @@
+Assumptions
+============
+
+This document lists all assumptions made during the design and development
+of the Aegis multi-agent incident response platform.
+
+Technical Assumptions
+---------------------
+1. LLM API Access: OpenAI/OpenRouter API is available with valid API key
+   - Fallback: Rule-based decision engine in orchestrator
+2. Monitoring Infrastructure: Prometheus and Alertmanager running at
+   default ports (9090, 9093) with standard metrics
+   - Customizable via environment variables
+3. Target Systems: kubectl/SSH access available on target infrastructure
+   for remediation actions
+   - Stub implementations provided when access is unavailable
+4. Vector Database: ChromaDB or pgvector available for similarity search
+   - Local fallback corpus bundled (5 seed runbooks)
+5. Docker / Docker Compose: Container runtime available for deployment
+6. Python 3.11+: Runtime environment for the application
+7. PostgreSQL: Available when using pgvector (optional, ChromaDB default)
+8. Network: Internal network for services (Prometheus, Grafana, ChromaDB)
+9. CORS: Frontend applications running on localhost:3000 and localhost:8080
+10. Redis: Available for caching (optional, graceful fallback)
+
+Business Assumptions
+--------------------
+11. Enterprise Environment: Platform targets organizations with 500+ servers
+    where manual incident response is no longer scalable
+12. Incident Patterns: ~70% of incidents follow known patterns from
+    runbooks and previous resolutions (the "known-knowns")
+13. Engineer Cost: On-call incident response engineer costs approximately
+    $150-200/hour, making automation valuable
+14. MTTR Baseline: Current mean-time-to-resolution is 4+ hours for
+    manual processes
+15. Alert Volume: Enterprise NOC receives 50-200 alerts daily, with
+    5-15 requiring active remediation
+16. Team Structure: 24/7 on-call rotation with escalation paths to
+    senior engineers and subject matter experts
+17. Compliance: Industry standard SLAs (1h response for P1, 4h for P2)
+18. Budget: Organizations allocate 5-15% of IT budget to incident
+    management and observability
+
+Design Assumptions
+------------------
+19. Incident-Driven: Workflow is triggered by incidents (not proactive)
+20. Sequential Stages: Stages 1-6 execute in sequence (except OBSERVE
+    which runs in parallel during EXECUTE)
+21. Human-in-Loop: High-risk actions require human approval before execution
+22. No Authentication: API and dashboard assumed to run behind
+    corporate VPN/firewall (no auth implemented)
+23. Single-Tenant: Platform assumes single-tenant deployment per customer
+24. In-Memory State: Incident store is in-memory and will be lost on
+    restart until PostgreSQL is wired
+25. Deterministic Fallbacks: When LLM is down, deterministic rule-based
+    decisions ensure continued operation
+
+Limitations (Acknowledged Gaps)
+-------------------------------
+26. NO Learning Loop: Stage 7 (LEARN) is not implemented. No mechanism
+    to automatically improve from past incidents beyond similarity search
+27. NO Persistent Database: PostgreSQL adapter is implemented but not
+    wired to incident_store.py. All data is in-memory
+28. NO Authentication: API and dashboard have no user authentication
+    or authorization (must run behind VPN/proxy)
+29. NO Agent Memory: Long-term memory for agents is not implemented
+30. STUB Integrations: Kubernetes, cloud (AWS/GCP/Azure), ServiceNow
+    integrations are stubs that return mock responses
+31. NO Benchmarks: No performance benchmarks or load testing results
+32. NO CI/CD: No GitHub Actions or CI/CD pipeline configured
+33. NO Monitoring Dashboards: Grafana dashboards not pre-configured
+34. Limited Test Coverage: 93 tests focus on unit/smoke tests; no
+    integration, e2e, or chaos tests

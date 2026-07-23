@@ -1,0 +1,45 @@
+Business Value: What Does This Save?
+======================================
+
+Important Note: All numbers below are estimates based on industry research. We haven't deployed this to a real customer yet.
+
+What We Can Measure From The Code
+---------------------------------
+- 15 types of automated fix actions
+- 7 incident lifecycle states
+- 6 types of validation checks
+- 4 types of monitoring checks
+- 2 vector database backends
+- 23 API endpoints
+- 93 passing tests
+
+Estimated Savings (For a Typical Large Company)
+------------------------------------------------
+Let's say a company has 500+ services and 50 engineers on rotation:
+
+- Current average time to fix an incident: 4 hours
+- With our platform: 30-60 minutes for common incidents
+- Savings: 75-87% time reduction
+
+- Current engineering hours per month spent on incidents: 400 hours
+- With our platform: ~120 hours
+- Savings: 280 hours per month
+
+- Current monthly cost (at $80/hour engineer cost): $32,000
+- With our platform: $9,600
+- Annual savings: Approximately $269,000
+
+Non-Financial Benefits (Equally Important)
+------------------------------------------
+1. Less burnout — engineers don't get woken up for routine issues
+2. Consistent response — every incident handled the same way, every time
+3. Automatic documentation — every action is logged, no one has to write post-mortems
+4. Faster troubleshooting — similar-incident search shows past solutions instantly
+5. Knowledge retention — when people leave, their knowledge stays in the system
+
+How We're Different From Existing Tools
+---------------------------------------
+- Our multi-agent AI coordinates end-to-end, not just chatbots or simple rules
+- Built-in approval workflow with auto-approve in development
+- Hybrid knowledge search (meaning-based + keyword-based)
+- Comprehensive validation (6 check types, not just health checks)

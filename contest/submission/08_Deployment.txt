@@ -1,0 +1,78 @@
+How To Deploy and Run
+======================
+
+Option 1: Quick Local Development (No Docker)
+----------------------------------------------
+Requirements:
+- Python 3.12 or higher
+
+Steps:
+1. python -m venv .venv          (create virtual environment)
+2. .venv\Scripts\activate        (activate it — Windows)
+3. pip install -e ".[dev]"       (install everything)
+4. Copy .env.example to .env     (set up configuration)
+5. python -m src.main            (start API at http://localhost:8000)
+6. streamlit run src/dashboard/app.py  (start dashboard at http://localhost:8501)
+
+Option 2: Docker Compose (Full Stack)
+--------------------------------------
+Requirements:
+- Docker and Docker Compose
+
+Steps:
+1. docker-compose up -d
+2. That's it! All 7 services start automatically
+
+Services that run:
+- API (port 8000) — the main backend
+- Dashboard (port 8501) — the web UI
+- PostgreSQL (port 5432) — database
+- Redis (port 6379) — cache
+- ChromaDB (port 8100) — vector database for similarity search
+- Prometheus (port 9090) — metrics collection
+- Grafana (port 3000) — monitoring dashboards
+
+Option 3: Single Docker Container (API Only)
+---------------------------------------------
+1. docker build -t agentic-platform .
+2. docker run -p 8000:8000 --env-file .env agentic-platform
+
+Minimum System Requirements
+---------------------------
+For local/Docker deployment:
+- 4 GB RAM
+- 2 CPU cores
+- 10 GB disk space
+- Docker 24+ (for Docker option)
+
+For development:
+- 8 GB RAM
+- 4 CPU cores
+- 20 GB SSD
+- Docker 24+
+
+Service Dependencies
+--------------------
+- API needs PostgreSQL and Redis to be healthy
+- Dashboard needs API to be healthy
+- Prometheus and Grafana run independently
+
+Configuration
+-------------
+All settings are managed through environment variables (or a .env file). Key ones you might need to change:
+
+- LLM_API_KEY — your OpenRouter or OpenAI API key (required for full AI features)
+- LLM_MODEL — which AI model to use (default: NVIDIA Nemotron)
+- DB_HOST — PostgreSQL host (default: localhost)
+- REDIS_HOST — Redis host (default: localhost)
+- ENVIRONMENT — "development" or "production"
+
+What's Missing For Production
+-----------------------------
+The platform runs, but for production use you'd need to add:
+- Authentication (users, logins, permissions)
+- TLS/SSL (HTTPS encryption)
+- Proper secrets management (instead of .env files)
+- Persistent database (currently uses in-memory storage for development speed)
+- CI/CD pipeline (automated testing and deployment)
+- Backup strategy (regular database backups)

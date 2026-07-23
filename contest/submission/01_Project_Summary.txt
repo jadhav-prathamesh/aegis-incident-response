@@ -1,0 +1,49 @@
+Aegis — Multi-Agent AI Incident Response Platform
+==================================================
+
+What Is It?
+-----------
+Aegis is a smart platform that uses multiple AI agents working together to automatically handle IT incidents. When something goes wrong in a company's computer systems, Aegis can detect the problem, figure out what's wrong, plan a fix, carry it out, and make sure it worked — all without waiting for a human engineer.
+
+Why It Matters
+--------------
+Currently, when a company's website or app goes down:
+- Engineers spend 4-8 hours fixing even common problems
+- 70% of incidents follow patterns that have been seen before
+- Knowledge about how to fix things is stuck in people's heads or outdated documents
+- On-call engineers get burned out from too many alerts, most of which are false alarms
+
+Aegis automates the boring, repetitive parts so engineers can focus on harder problems.
+
+The Five AI Agents
+------------------
+1. Orchestrator Agent — The "team leader" that receives incidents, makes decisions, and coordinates the other agents
+2. Planner Agent — The "strategist" that searches past solutions and creates a step-by-step fix plan
+3. Executor Agent — The "doer" that carries out the fix actions (restart servers, scale up, clear caches, etc.)
+4. Observer Agent — The "watchdog" that monitors system health, checks metrics, and tracks alerts
+5. Validator Agent — The "inspector" that verifies the fix actually worked
+
+What's Built (Code Status)
+--------------------------
+All five agents, the API, database connections, vector search, monitoring, and dashboard are fully built and tested. The platform has:
+- 93 passing tests
+- 23 API endpoints for managing incidents and agents
+- 15 types of automated actions (restart, scale, rollback, etc.)
+- Knowledge search that finds relevant past solutions
+- Human approval gates for risky actions
+
+Main Gaps
+---------
+- No learning loop yet (system doesn't improve from past incidents automatically)
+- Cloud integrations (AWS, Azure, GCP) are placeholder stubs
+- No user authentication wired in yet
+
+Tech Stack
+----------
+- Python 3.12+ for all code
+- LangGraph + LangChain for the AI agent framework
+- FastAPI for the web API
+- PostgreSQL + pgvector or ChromaDB for storing and searching data
+- Prometheus + Grafana for monitoring
+- Streamlit for the dashboard
+- Docker Compose for easy deployment
